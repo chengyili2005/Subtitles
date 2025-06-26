@@ -1,0 +1,1 @@
+Temp files + arial.ttf font will be stored here
