@@ -1,0 +1,1 @@
+A quick Python command-line script for generating subtitles.
