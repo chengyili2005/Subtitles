@@ -64,7 +64,7 @@ def textToLines(json_data, max_chars=80, max_duration=3.0, max_gap=1.5):
 		subtitles.append(subtitle_line)
 	return subtitles
 
-def wrap_text(text, font, max_width):
+def wrapText(text, font, max_width):
     words = text.split()
     lines = []
     current_line = ""
@@ -92,7 +92,7 @@ def createCaption(textJSON, framesize, font_path="temp/arial.ttf", fontsize=80, 
 	# Load font and calculate padding
 	font = ImageFont.truetype(font_path, fontsize)
 	max_text_width = framesize[0] - 2 * padding
-	lines = wrap_text(text, font, max_text_width)
+	lines = wrapText(text, font, max_text_width)
 	line_height = font.getbbox("Ay")[3]
 	img_height = len(lines) * (line_height + padding) + padding
 	img_width = max_text_width + 2 * padding
@@ -180,7 +180,7 @@ if __name__ == "__main__":
 		
 	# Output video and clean up
 	final_video = CompositeVideoClip([video] + line_clips, size=frame_size)
-	final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac", preset="ultrafast", threads=4) # Debugging: Use Ultrafast
+	final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac", preset="ultrafast", threads=4) # Debugging: Use ultrafast, for quality, use veryslow
 	print("Deleting temporary audio clip at: " + audio_path)
 	os.remove(audio_path)
 	print("Success! File can be found at: " + output_path)
