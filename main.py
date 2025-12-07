@@ -4,14 +4,19 @@
 import os
 import sys
 import ffmpeg # pip install ffmpeg-python
-from moviepy.editor import VideoFileClip, AudioFileClip, CompositeVideoClip, TextClip, ColorClip, ImageClip # pip install moviepy==2.0.0.dev2 && pip install imageio==2.25.1
+from moviepy import VideoFileClip, AudioFileClip, CompositeVideoClip, TextClip, ColorClip, ImageClip # pip install moviepy==2.0.0.dev2 && pip install imageio==2.25.1
 from faster_whisper import WhisperModel # pip install faster-whisper
 from PIL import Image, ImageDraw, ImageFont
 import textwrap
 import numpy as np
 import json
 
-# == Helper functions == 
+# == Variables ==
+max_chars = 45 # Original: 80
+fontsize = 30 # Original: 80
+padding = 20 # Original: 20
+
+# == Helper functions ==
 # The following functions are borrowed from a tutorial linked in "Credits"
 def textToWords(segments):
 	wordlevel_info = []
@@ -20,7 +25,7 @@ def textToWords(segments):
 			wordlevel_info.append({'word':word.word.strip(),'start':word.start,'end':word.end})
 	return wordlevel_info
 
-def textToLines(json_data, max_chars=80, max_duration=3.0, max_gap=1.5):
+def textToLines(json_data, max_chars=max_chars, max_duration=3.0, max_gap=1.5):
 	subtitles = []
 	line = []
 	line_duration = 0
@@ -34,10 +39,10 @@ def textToLines(json_data, max_chars=80, max_duration=3.0, max_gap=1.5):
 		temp = " ".join(item["word"] for item in line)
 		# Check if adding a new word exceeds the maximum character count or duration
 		new_line_chars = len(temp)
-		duration_exceeded = line_duration > max_duration 
-		chars_exceeded = new_line_chars > max_chars 
+		duration_exceeded = line_duration > max_duration
+		chars_exceeded = new_line_chars > max_chars
 		if idx>0:
-			gap = word_data['start'] - json_data[idx-1]['end'] 
+			gap = word_data['start'] - json_data[idx-1]['end']
 			# print (word,start,end,gap)
 			maxgap_exceeded = gap > max_gap
 		else:
@@ -80,7 +85,7 @@ def wrapText(text, font, max_width):
         lines.append(current_line)
     return lines
 
-def createCaption(textJSON, framesize, font_path="temp/arial.ttf", fontsize=80, text_color="white", bg_color="black", padding=20):
+def createCaption(textJSON, framesize, font_path="temp/arial.ttf", fontsize=fontsize, text_color="white", bg_color="black", padding=padding):
 	text = textJSON["word"]
 	start = textJSON["start"]
 	end = textJSON["end"]
@@ -111,14 +116,14 @@ def createCaption(textJSON, framesize, font_path="temp/arial.ttf", fontsize=80, 
 	pos_x = (framesize[0] - img_width) // 2
 	pos_y = framesize[1] - img_height - framesize[1] // 12
 	np_img = np.array(img)
-	clip = ImageClip(np_img).set_start(start).set_duration(duration).set_position((pos_x, pos_y))
+	clip = ImageClip(np_img).with_start(start).with_duration(duration).with_position((pos_x, pos_y))
 	return [clip]
 
 # == Main call ==
 if __name__ == "__main__":
-	
+
 	# Checks correct usage
-	if (len(sys.argv) != 3): 
+	if (len(sys.argv) != 3):
 		print("Correct usage: python3 main.py [input_file_path] [output_directory]")
 		quit()
 	path = sys.argv[1]
@@ -134,7 +139,7 @@ if __name__ == "__main__":
 
 	# Grab path and open video
 	audio_path = "temp/temp.mp3"
-	try: 
+	try:
 		video = VideoFileClip(path)
 		audio = video.audio
 		print("Writing temporary audio clip at: " + audio_path)
@@ -150,7 +155,7 @@ if __name__ == "__main__":
 
 	# Use algorithmic subtitle generation (borrowed from tutorial code)
 	lines = textToLines(textToWords(segments))
-	
+
 	# Create an interface for editting these subtitles
 	with open(output_file, 'w') as f:
 		for line in lines:
@@ -176,11 +181,11 @@ if __name__ == "__main__":
 		out = createCaption(line, frame_size)
 		line_clips.extend(out)
 	for clip in line_clips:
-		clip = clip.set_position(("center", frame_size[1] - clip.h - 80))
-		
+		clip = clip.with_position(("center", frame_size[1] - clip.h - 80))
+
 	# Output video and clean up
 	final_video = CompositeVideoClip([video] + line_clips, size=frame_size)
-	final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac", preset="ultrafast", threads=4) # Debugging: Use ultrafast, for quality, use veryslow
+	final_video.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac", preset="veryslow", threads=4) # Use ultrafast for debugging. For quality, use veryslow
 	print("Deleting temporary audio clip at: " + audio_path)
 	os.remove(audio_path)
 	print("Success! File can be found at: " + output_path)
