@@ -1,0 +1,6 @@
+ffmpeg-python
+moviepy==2.0.0.dev2
+imageio==2.25.1
+faster-whisper
+Pillow
+numpy
